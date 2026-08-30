@@ -1,0 +1,19 @@
+{
+  "name": "@dml/example-counter",
+  "version": "0.0.0",
+  "description": "Counter demo: fine-grained reactive runtime (signal child + event) verified against the in-memory test host.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@dml/reactivity": "workspace:*",
+    "@dml/runtime-test": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "latest",
+    "vitest": "latest"
+  }
+}

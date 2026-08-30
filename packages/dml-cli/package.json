@@ -1,0 +1,34 @@
+{
+  "name": "@dml/cli",
+  "version": "0.0.0",
+  "description": "DML CLI: consumes @tsdml/compiler to convert/compile DML files. 'dml convert' prints a DML config as JSON; 'dml compile' emits framework runtime-call source. Demonstrates DML as the configuration language.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "bin": {
+    "dml": "./dist/cli.mjs"
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@tsdml/compiler": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "tsdown": "latest",
+    "typescript": "latest",
+    "vitest": "latest"
+  }
+}

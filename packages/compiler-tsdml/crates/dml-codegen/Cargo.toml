@@ -1,0 +1,12 @@
+[package]
+name = "dml-codegen"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description.workspace = true
+
+[lib]
+name = "dml_codegen"
+
+[dependencies]
+dml-ast = { path = "../dml-ast" }

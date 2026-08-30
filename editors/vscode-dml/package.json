@@ -1,0 +1,80 @@
+{
+  "name": "vscode-dml",
+  "displayName": "DML / TSDML Language Support",
+  "description": "Language support for DML and TSDML: syntax highlighting, diagnostics, hover, semantic tokens and completion via the native Rust dml-lsp server.",
+  "version": "0.0.1",
+  "publisher": "dml",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters"
+  ],
+  "activationEvents": [
+    "onLanguage:dml",
+    "onLanguage:tsdml"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "dml",
+        "aliases": [
+          "DML",
+          "dml"
+        ],
+        "extensions": [
+          ".dml"
+        ],
+        "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "tsdml",
+        "aliases": [
+          "TSDML",
+          "tsdml"
+        ],
+        "extensions": [
+          ".tsdml"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "dml",
+        "scopeName": "source.dml",
+        "path": "./syntaxes/dml.tmLanguage.json"
+      },
+      {
+        "language": "tsdml",
+        "scopeName": "source.tsdml",
+        "path": "./syntaxes/dml.tmLanguage.json"
+      }
+    ],
+    "configuration": {
+      "title": "DML",
+      "properties": {
+        "dml.lsp.path": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the dml-lsp binary. Leave empty to use the bundled one."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
+    "watch": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --watch"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.9.2",
+    "esbuild": "latest",
+    "typescript": "latest",
+    "vscode-languageclient": "^9.0.0"
+  }
+}

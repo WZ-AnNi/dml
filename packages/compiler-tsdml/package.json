@@ -1,0 +1,41 @@
+{
+  "name": "@tsdml/compiler",
+  "version": "0.0.0",
+  "description": "TSDML native compiler (Rust + napi-rs). Parses DML source into a DML-AST and (later) generates TSDML/runtime calls. Compiled to a platform .node binary; no JS/TS in the compiler.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "napi": {
+    "binaryName": "tsdml-compiler",
+    "targets": [
+      "x86_64-pc-windows-msvc",
+      "aarch64-pc-windows-msvc"
+    ],
+    "outputDir": "."
+  },
+  "files": ["dist", "binding.js", "binding.d.ts", "*.node"],
+  "scripts": {
+    "build": "napi build --platform --release --manifest-path crates/napi-binding/Cargo.toml && tsdown && node scripts/copy-node.mjs",
+    "build:debug": "napi build --platform --manifest-path crates/napi-binding/Cargo.toml && tsdown && node scripts/copy-node.mjs",
+    "build:ts": "tsdown",
+    "cargo-test": "cargo test --workspace",
+    "cargo-check": "cargo check --workspace",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "latest",
+    "@types/node": "latest",
+    "tsdown": "latest",
+    "typescript": "latest",
+    "vitest": "latest"
+  }
+}

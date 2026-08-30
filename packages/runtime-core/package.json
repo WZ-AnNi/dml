@@ -1,0 +1,40 @@
+{
+  "name": "@dml/runtime-core",
+  "version": "0.0.0",
+  "description": "DML runtime-core: host-agnostic 0-VDOM rendered core. Defines RendererOptions (injected nodeOps/patchProp), Block model, render-effect scheduling, createRenderer(). No DOM knowledge here.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./renderer": {
+      "types": "./dist/renderer.d.mts",
+      "import": "./dist/renderer.mjs",
+      "require": "./dist/renderer.cjs"
+    },
+    "./block": {
+      "types": "./dist/block.d.mts",
+      "import": "./dist/block.mjs",
+      "require": "./dist/block.cjs"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@dml/reactivity": "workspace:*"
+  },
+  "devDependencies": {
+    "tsdown": "latest",
+    "typescript": "latest",
+    "vitest": "latest"
+  }
+}

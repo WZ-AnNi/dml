@@ -1,0 +1,19 @@
+# pnpm
+node_modules/
+.pnpm-store/
+*.tsbuildinfo
+
+# build
+dist/
+*.node
+target/
+
+# editor
+.vscode/
+.idea/
+.DS_Store
+
+# logs
+*.log
+npm-debug.log*
+.local/

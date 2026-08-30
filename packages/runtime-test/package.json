@@ -1,0 +1,30 @@
+{
+  "name": "@dml/runtime-test",
+  "version": "0.0.0",
+  "description": "DML runtime-test: in-memory host for runtime-core so rendering can be asserted without a DOM. Proves runtime-core is host-agnostic.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@dml/runtime-core": "workspace:*"
+  },
+  "devDependencies": {
+    "tsdown": "latest",
+    "typescript": "latest",
+    "vitest": "latest"
+  }
+}

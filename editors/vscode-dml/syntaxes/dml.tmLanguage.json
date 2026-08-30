@@ -1,0 +1,53 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "DML",
+  "scopeName": "source.dml",
+  "patterns": [
+    { "include": "#comment" },
+    { "include": "#element" },
+    { "include": "#attribute" },
+    { "include": "#string" },
+    { "include": "#expression" },
+    { "include": "#number" }
+  ],
+  "repository": {
+    "comment": {
+      "patterns": [
+        { "name": "comment.line.dml", "match": "//.*$" },
+        { "name": "comment.block.dml", "begin": "/\\*", "end": "\\*/" }
+      ]
+    },
+    "element": {
+      "patterns": [
+        {
+          "name": "entity.name.tag.dml",
+          "match": "\\b[A-Za-z_][A-Za-z0-9_-]*\\b(?=\\s*\\{)"
+        }
+      ]
+    },
+    "attribute": {
+      "patterns": [
+        {
+          "name": "entity.other.attribute-name.dml",
+          "match": "@[A-Za-z_][A-Za-z0-9_:.-]*"
+        }
+      ]
+    },
+    "string": {
+      "patterns": [
+        { "name": "string.quoted.double.dml", "begin": "\"", "end": "\"", "patterns": [{ "name": "constant.character.escape.dml", "match": "\\\\." }] },
+        { "name": "string.quoted.single.dml", "begin": "'", "end": "'", "patterns": [{ "name": "constant.character.escape.dml", "match": "\\\\." }] }
+      ]
+    },
+    "expression": {
+      "patterns": [
+        { "name": "string.interpolated.dml", "begin": "`", "end": "`" }
+      ]
+    },
+    "number": {
+      "patterns": [
+        { "name": "constant.numeric.dml", "match": "\\b-?\\d+(\\.\\d+)?\\b" }
+      ]
+    }
+  }
+}

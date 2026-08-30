@@ -1,0 +1,31 @@
+{
+  "name": "@dml/runtime-dom",
+  "version": "0.0.0",
+  "description": "DML runtime-dom: concrete DOM host for runtime-core. Implements RendererOptions.nodeOps (real DOM) and patchProp (events/attrs/props/class/style/SVG). createDOMRenderer() = createRenderer(domOptions).",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@dml/runtime-core": "workspace:*"
+  },
+  "devDependencies": {
+    "happy-dom": "latest",
+    "tsdown": "latest",
+    "typescript": "latest",
+    "vitest": "latest"
+  }
+}

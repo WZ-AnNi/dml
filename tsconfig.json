@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "resolveJsonModule": true,
+    "types": [],
+    "paths": {
+      "@dml/reactivity": ["./packages/reactivity/src/index.ts"],
+      "@dml/runtime-core": ["./packages/runtime-core/src/index.ts"],
+      "@dml/runtime-dom": ["./packages/runtime-dom/src/index.ts"],
+      "@dml/runtime-test": ["./packages/runtime-test/src/index.ts"],
+      "dml": ["./packages/dml/src/index.ts"],
+      "@tsdml/compiler": ["./packages/compiler-tsdml/src/index.ts"]
+    },
+    "noEmit": true
+  }
+}

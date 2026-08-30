@@ -1,0 +1,30 @@
+{
+  "name": "@dml/reactivity",
+  "version": "0.0.0",
+  "description": "DML reactivity: thin framework-friendly wrapper over alien-signals (the same core Vue reactivity is ported from). Signal/computed/effect/scope.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "alien-signals": "latest"
+  },
+  "devDependencies": {
+    "tsdown": "latest",
+    "typescript": "latest",
+    "vitest": "latest"
+  }
+}
