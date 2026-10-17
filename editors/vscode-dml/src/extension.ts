@@ -35,7 +35,12 @@ export function activate(context: vscode.ExtensionContext): void {
   const clientOptions: LanguageClientOptions = {
     documentSelector: [
       { language: "dml", scheme: "file" },
-      { language: "tsdml", scheme: "file" },
+      // `.tsdml` files are registered under the `typescript` language so the
+      // built-in TypeScript language service (augmented by the
+      // `@tsdml/language-service` server plugin) provides hints/completion.
+      // Route just the `.tsdml` subset back to the native dml-lsp for DML
+      // diagnostics that the TS service cannot produce.
+      { language: "typescript", pattern: "**/*.tsdml", scheme: "file" },
     ],
     synchronize: {
       configurationSection: "dml",
@@ -65,7 +70,9 @@ function resolveServerPath(context: vscode.ExtensionContext): string | undefined
   if (configured && fs.existsSync(configured)) return configured
 
   // bundled binary shipped with the extension (if present)
-  const bundled = path.join(context.extensionPath, "bin", "dml-lsp")
+  // Windows: `fs.existsSync` does not add `.exe`, so probe both names.
+  const exe = process.platform === "win32" ? ".exe" : ""
+  const bundled = path.join(context.extensionPath, "bin", `dml-lsp${exe}`)
   if (fs.existsSync(bundled)) return bundled
 
   // fall back to a sibling build in the monorepo

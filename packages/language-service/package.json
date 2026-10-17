@@ -1,0 +1,35 @@
+{
+  "name": "@tsdml/language-service",
+  "version": "0.0.0",
+  "description": "TypeScript language-service plugin for TSDML. Makes `.tsdml` files (TS + `@{ ... }` DML template blocks) type-check, autocomplete, hover and go-to-definition exactly like TSX — no hand-written `.d.ts` needed in the editor.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@tsdml/compiler": "workspace:*",
+    "@tsdml/transform": "workspace:*"
+  },
+  "peerDependencies": {
+    "typescript": ">=5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "tsdown": "latest",
+    "typescript": "6.0.3",
+    "vitest": "latest"
+  }
+}

@@ -11,12 +11,15 @@
   "scripts": {
     "build": "pnpm -r --filter './packages/*' --filter '!@tsdml/compiler' run build",
     "build:napi": "pnpm --filter @tsdml/compiler run build",
+    "build:all": "pnpm --filter @tsdml/compiler run build:all",
+    "build:check": "pnpm --filter @tsdml/compiler run build:check",
     "typecheck": "pnpm -r --filter './packages/*' --filter '!@tsdml/compiler' run typecheck",
     "test": "pnpm -r --filter './packages/*' --filter '!@tsdml/compiler' run test",
     "test:napi": "pnpm --filter @tsdml/compiler run cargo-test",
     "clean": "pnpm -r --filter './packages/*' exec rimraf dist node_modules && rimraf node_modules"
   },
   "devDependencies": {
+    "@tsdml/language-service": "workspace:*",
     "tsdown": "latest",
     "typescript": "latest"
   }

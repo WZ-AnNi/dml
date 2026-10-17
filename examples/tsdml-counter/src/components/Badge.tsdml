@@ -1,0 +1,17 @@
+/**
+ * A component in its own `.tsdml` file — props in, template out.
+ *
+ * **Value position is TypeScript**: after `@name:` the parser captures a real
+ * TS expression until the member boundary, so `props.tone ?? "badge"` is an
+ * expression (tracked), while `"badge"` is a literal (applied once).
+ * Backticks are ordinary template literals, not an expression marker.
+ */
+
+export function Badge(props: { label: string; tone?: string }) {
+  return @{
+    span {
+      @class: props.tone ?? "badge",
+      { props.label }
+    }
+  }
+}

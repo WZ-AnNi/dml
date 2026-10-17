@@ -8,3 +8,4 @@
 export * from "./types.js"
 export * from "./block.js"
 export * from "./renderer.js"
+export * from "./template.js"

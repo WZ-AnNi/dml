@@ -12,9 +12,28 @@ export const DOMNode = (n: Node): RendererNode => n as unknown as RendererNode
 export const DOMElement = (n: Element): RendererElement =>
   n as unknown as RendererElement
 
+const SVG_NS = "http://www.w3.org/2000/svg"
+
 export const nodeOps = {
   createElement(tag: string): RendererElement {
     return DOMElement(document.createElement(tag))
+  },
+  /** Namespace-aware creation: `svg` subtrees need `createElementNS`. */
+  createElementNS(tag: string, isSVG: boolean): RendererElement {
+    return DOMElement(
+      isSVG ? document.createElementNS(SVG_NS, tag) : document.createElement(tag),
+    )
+  },
+  /** Used by the template kit: one native deep copy per template instance. */
+  cloneNode(node: RendererNode, deep: boolean): RendererNode {
+    return DOMNode((node as unknown as Node).cloneNode(deep))
+  },
+  /** Direct children, so a cloned subtree can be paired with its prototype. */
+  children(node: RendererNode): RendererNode[] {
+    return Array.from((node as unknown as Node).childNodes, DOMNode)
+  },
+  isNode(value: unknown): boolean {
+    return typeof Node !== "undefined" && value instanceof Node
   },
   createText(text: string): RendererNode {
     return DOMNode(document.createTextNode(text))

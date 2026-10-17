@@ -12,7 +12,6 @@
 //!   - basic completion (element/attribute keywords)
 
 use std::collections::HashMap;
-use std::io::{self, BufRead, BufReader, Write};
 use std::str::FromStr;
 
 use lsp_server::{Connection, Message, Notification, Request, Response};
@@ -26,11 +25,10 @@ use lsp_types::{
 
 use dml_parser::parse_document;
 
-/// A document held by the server: its text and the last parse result.
+/// A document held by the server: its text (parse errors are computed per
+/// request via `dml_parser::parse_document`, which never fails).
 struct Doc {
     text: String,
-    /// parse error, if any
-    error: Option<dml_parser::ParseError>,
 }
 
 fn main() {
@@ -111,7 +109,6 @@ impl Server {
                     uri.clone(),
                     Doc {
                         text: params.text_document.text,
-                        error: None,
                     },
                 );
                 self.publish_diagnostics(&uri);
@@ -180,25 +177,15 @@ impl Server {
     fn publish_diagnostics(&mut self, uri: &str) {
         let mut diags = Vec::new();
         if let Some(doc) = self.docs.get(uri) {
-            match parse_document(&doc.text) {
-                Ok(_) => {}
-                Err(e) => {
-                    diags.push(Diagnostic {
-                        range: Range {
-                            start: Position {
-                                line: e.span.line.saturating_sub(1),
-                                character: e.span.col.saturating_sub(1),
-                            },
-                            end: Position {
-                                line: e.span.line.saturating_sub(1),
-                                character: e.span.col.saturating_sub(1) + 1,
-                            },
-                        },
-                        severity: Some(DiagnosticSeverity::ERROR),
-                        message: e.message.clone(),
-                        ..Default::default()
-                    });
-                }
+            let out = parse_document(&doc.text);
+            for e in &out.errors {
+                diags.push(Diagnostic {
+                    range: error_range(&doc.text, e.span),
+                    severity: Some(DiagnosticSeverity::ERROR),
+                    message: e.message.clone(),
+                    source: Some("dml".into()),
+                    ..Default::default()
+                });
             }
         }
         let params = PublishDiagnosticsParams {
@@ -236,20 +223,51 @@ impl Server {
         let _params: SemanticTokensParams =
             serde_json::from_value(req.params.clone()).map_err(|e| e.to_string())?;
         // A minimal tokenizer: highlight element names, attributes, strings,
-        // numbers and backtick expressions. Good enough for a first pass.
+        // numbers and backtick expressions. Comments are skipped entirely so
+        // the textmate grammar (which colors them correctly) shows through.
+        // Positions are emitted in UTF-16 code units as LSP requires: raw byte
+        // offsets drift on every CJK character.
         let mut tokens = Vec::new();
         for doc in self.docs.values() {
             let mut prev_line = 0u32;
             let mut prev_char = 0u32;
+            let mut in_block_comment = false;
             for (li, line) in doc.text.lines().enumerate() {
                 let mut chars = line.char_indices().peekable();
-                while let Some((ci, c)) = chars.next() {
+                let mut u16_col = 0u32;
+                while let Some((_ci, c)) = chars.next() {
+                    if in_block_comment {
+                        if c == '*' && chars.peek().map(|(_, cc)| *cc) == Some('/') {
+                            chars.next();
+                            u16_col += 2;
+                            in_block_comment = false;
+                        } else {
+                            u16_col += c.len_utf16() as u32;
+                        }
+                        continue;
+                    }
+                    if c == '/' {
+                        match chars.peek().map(|(_, cc)| *cc) {
+                            Some('/') => break, // line comment: skip the rest of the line
+                            Some('*') => {
+                                chars.next();
+                                u16_col += 2;
+                                in_block_comment = true;
+                                continue;
+                            }
+                            _ => {
+                                u16_col += 1;
+                                continue;
+                            }
+                        }
+                    }
+                    let start_u16 = u16_col;
                     let (ty, len) = match c {
                         '"' | '\'' => {
                             // string literal
-                            let mut n = 1;
+                            let mut n = c.len_utf16() as u32;
                             while let Some((_, cc)) = chars.next() {
-                                n += 1;
+                                n += cc.len_utf16() as u32;
                                 if cc == c {
                                     break;
                                 }
@@ -257,9 +275,9 @@ impl Server {
                             (SemanticTokenType::STRING, n)
                         }
                         '`' => {
-                            let mut n = 1;
+                            let mut n = 1u32;
                             while let Some((_, cc)) = chars.next() {
-                                n += 1;
+                                n += cc.len_utf16() as u32;
                                 if cc == '`' {
                                     break;
                                 }
@@ -268,11 +286,12 @@ impl Server {
                         }
                         '@' => {
                             // attribute marker
-                            let mut n = 1;
+                            let mut n = 1u32;
                             while let Some((_, cc)) = chars.peek() {
-                                if cc.is_alphanumeric() || *cc == ':' || *cc == '-' {
+                                let c2 = *cc;
+                                if c2.is_alphanumeric() || c2 == ':' || c2 == '-' {
                                     chars.next();
-                                    n += 1;
+                                    n += c2.len_utf16() as u32;
                                 } else {
                                     break;
                                 }
@@ -280,11 +299,12 @@ impl Server {
                             (SemanticTokenType::PROPERTY, n)
                         }
                         c if c.is_ascii_digit() => {
-                            let mut n = 1;
+                            let mut n = 1u32;
                             while let Some((_, cc)) = chars.peek() {
-                                if cc.is_ascii_digit() || *cc == '.' {
+                                let c2 = *cc;
+                                if c2.is_ascii_digit() || c2 == '.' {
                                     chars.next();
-                                    n += 1;
+                                    n += c2.len_utf16() as u32;
                                 } else {
                                     break;
                                 }
@@ -293,34 +313,39 @@ impl Server {
                         }
                         c if c.is_alphabetic() || c == '_' => {
                             // element name or bare word
-                            let mut n = 1;
+                            let mut n = c.len_utf16() as u32;
                             while let Some((_, cc)) = chars.peek() {
-                                if cc.is_alphanumeric() || *cc == '-' || *cc == '_' {
+                                let c2 = *cc;
+                                if c2.is_alphanumeric() || c2 == '-' || c2 == '_' {
                                     chars.next();
-                                    n += 1;
+                                    n += c2.len_utf16() as u32;
                                 } else {
                                     break;
                                 }
                             }
                             (SemanticTokenType::KEYWORD, n)
                         }
-                        _ => continue,
+                        _ => {
+                            u16_col += c.len_utf16() as u32;
+                            continue;
+                        }
                     };
                     let delta_line = li as u32 - prev_line;
-                    let delta_char = if delta_line == 0 {
-                        ci as u32 - prev_char
+                    let delta_start = if delta_line == 0 {
+                        start_u16 - prev_char
                     } else {
-                        ci as u32
+                        start_u16
                     };
                     tokens.push(SemanticToken {
                         delta_line,
-                        delta_start: delta_char,
-                        length: len as u32,
+                        delta_start,
+                        length: len,
                         token_type: token_type_index(&ty),
                         token_modifiers_bitset: 0,
                     });
                     prev_line = li as u32;
-                    prev_char = ci as u32 + len as u32;
+                    prev_char = start_u16 + len;
+                    u16_col = start_u16 + len;
                 }
             }
         }
@@ -364,6 +389,71 @@ impl Server {
     }
 }
 
+/// Map one parser error span onto an LSP range.
+///
+/// Error spans are 0-based UTF-16 (LSP `Position` units), so they map straight
+/// across. A span with byte width is widened to the offending construct; a
+/// zero-width span squiggles one character so it stays visible. A caret at EOF
+/// lands on the empty trailing line, so the range moves back to the last line
+/// with content — LSP rejects a reversed or empty range.
+fn error_range(text: &str, span: dml_ast::Span) -> Range {
+    let mut start = Position {
+        line: span.line,
+        character: span.col,
+    };
+    let mut end = if span.end > span.start {
+        let end = span.end.min(text.len());
+        let before = &text[..end];
+        let line = before.matches('\n').count() as u32;
+        let col = if line == 0 {
+            before.chars().map(|c| c.len_utf16() as u32).sum()
+        } else {
+            let last_nl = before.rfind('\n').unwrap_or(0);
+            text[last_nl + 1..end]
+                .chars()
+                .map(|c| c.len_utf16() as u32)
+                .sum()
+        };
+        Position {
+            line,
+            character: col,
+        }
+    } else {
+        Position {
+            line: start.line,
+            character: start.character + 1,
+        }
+    };
+
+    let lines: Vec<&str> = text.lines().collect();
+    let empty_at = |l: u32| lines.get(l as usize).map_or(true, |s| s.is_empty());
+    if empty_at(start.line) {
+        let mut l = start.line as usize;
+        while l > 0 && empty_at(l as u32) {
+            l -= 1;
+        }
+        let len: u32 = lines
+            .get(l)
+            .map(|s| s.chars().map(|c| c.len_utf16() as u32).sum())
+            .unwrap_or(0);
+        start = Position {
+            line: l as u32,
+            character: len,
+        };
+        end = Position {
+            line: l as u32,
+            character: len + 1,
+        };
+    } else if end.line == start.line && end.character <= start.character {
+        let len: u32 = lines[start.line as usize]
+            .chars()
+            .map(|c| c.len_utf16() as u32)
+            .sum();
+        end.character = (start.character + 1).min(len.max(1));
+    }
+    Range { start, end }
+}
+
 fn word_at(line: &str, col: usize) -> String {
     let chars: Vec<char> = line.chars().collect();
     let mut start = col;
@@ -385,5 +475,110 @@ fn token_type_index(ty: &SemanticTokenType) -> u32 {
         t if t == &SemanticTokenType::FUNCTION => 3,
         t if t == &SemanticTokenType::PROPERTY => 4,
         _ => 0,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn span(start: usize, end: usize, line: u32, col: u32) -> dml_ast::Span {
+        dml_ast::Span {
+            start,
+            end,
+            line,
+            col,
+        }
+    }
+
+    /// Every diagnostic the parser reports for `src` maps to a forward,
+    /// non-empty range on a line that exists.
+    fn all_ranges_are_valid(src: &str) {
+        let out = parse_document(src);
+        for e in &out.errors {
+            let r = error_range(src, e.span);
+            assert!(
+                (r.end.line, r.end.character) > (r.start.line, r.start.character)
+                    || r.end.line > r.start.line,
+                "empty or reversed range for {:?}: {:?}",
+                e.message,
+                r
+            );
+            let line_count = src.lines().count() as u32;
+            assert!(
+                r.start.line < line_count.max(1),
+                "range line {} past the last line {} for {:?}",
+                r.start.line,
+                line_count,
+                e.message
+            );
+        }
+    }
+
+    #[test]
+    fn error_at_span_keeps_its_line() {
+        // Regression: `span_from_offsets` filled line/col with 0, so every
+        // `err_at` diagnostic landed on line 1 regardless of where it was.
+        let text = "div {\n  @class: )\n}\n";
+        let out = parse_document(text);
+        let with_width = out
+            .errors
+            .iter()
+            .find(|e| e.span.end > e.span.start)
+            .expect("expected a span with byte width");
+        let r = error_range(text, with_width.span);
+        assert_eq!(r.start.line, 1, "should point at the `@class` line");
+        assert!(r.start.character > 0, "should not sit at column 0");
+    }
+
+    #[test]
+    fn eof_error_is_visible_and_forward() {
+        // The caret at EOF lands on the empty trailing line; the range must
+        // move back to the last content line, not stay invisible at EOF.
+        let text = "div {\n  span {\n";
+        let out = parse_document(text);
+        assert!(!out.errors.is_empty());
+        for e in &out.errors {
+            let r = error_range(text, e.span);
+            assert!(
+                r.end.line > r.start.line || r.end.character > r.start.character,
+                "invisible range: {:?}",
+                r
+            );
+            assert_eq!(r.start.line, 1, "should squiggle the last content line");
+        }
+    }
+
+    #[test]
+    fn utf16_columns_place_the_caret_where_the_editor_draws_it() {
+        // `"中文😀"` — 4 chars, 2+2+2 UTF-16 units. A byte-based column would
+        // land the caret mid-string.
+        let text = "div { span { \"中文😀\" }, @class: ) }\n";
+        let out = parse_document(text);
+        let with_width = out
+            .errors
+            .iter()
+            .find(|e| e.span.end > e.span.start)
+            .expect("expected a span with byte width");
+        let r = error_range(text, with_width.span);
+        // the `)` is the 31st UTF-16 unit on line 0:
+        // `div { span { "` (15) + `中文` (2) + `😀` (2) + `" }, @class: ` (12)
+        assert_eq!(r.start.character, 31, "{:?}", r);
+    }
+
+    #[test]
+    fn ranges_are_forward_for_many_inputs() {
+        for src in [
+            "div {",
+            "div {\n  span {\n",
+            "div { @class: ) }",
+            "section {\n  span {\n    @class: )\n  }\n}\n",
+            "div { span { \"中文😀\" }, @class: ) }\n",
+            "@for (x of) { li {} }",
+            "div { @if (a) { span {} ",
+            "",
+        ] {
+            all_ranges_are_valid(src);
+        }
     }
 }

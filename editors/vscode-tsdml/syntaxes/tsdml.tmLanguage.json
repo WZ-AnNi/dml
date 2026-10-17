@@ -1,0 +1,29 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "TSDML",
+  "scopeName": "source.tsdml",
+  "patterns": [
+    {
+      "include": "#template-block"
+    },
+    {
+      "include": "source.ts"
+    }
+  ],
+  "repository": {
+    "template-block": {
+      "name": "meta.template.tsdml",
+      "begin": "@\\{",
+      "beginCaptures": {
+        "0": { "name": "punctuation.definition.template-begin.tsdml" }
+      },
+      "end": "\\}",
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.template-end.tsdml" }
+      },
+      "patterns": [
+        { "include": "source.dml" }
+      ]
+    }
+  }
+}

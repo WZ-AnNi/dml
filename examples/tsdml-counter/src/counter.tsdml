@@ -1,0 +1,189 @@
+/**
+ * TSDML counter demo — a component written in a `.tsdml` file.
+ *
+ * A `.tsdml` file is a TypeScript module. The DML template lives in a template
+ * block (the TSDML analogue of a JSX Fragment): `at` + `open-brace`. The tsdml
+ * Vite plugin lowers that block with the Rust compiler into the optimizing
+ * runtime IR: the static structure becomes a hoisted template constant the host
+ * clones per instance, and only the dynamic bindings (`{ count.read() }`) go
+ * through a render effect.
+ *
+ * The component takes **only props** — like any component function: the
+ * compiler injects the host runtime import, so the same source drives the
+ * browser DOM (`main.ts`) and the in-memory test host (`test/counter.spec.ts`,
+ * built with `runtimeModule: "@dml/runtime-test"`).
+ */
+
+import { createSignal } from "@dml/reactivity"
+import heroImg from "./assets/hero.png"
+import tsdmlMark from "./assets/tsdml.svg"
+import viteLogo from "./assets/vite.svg"
+import { Badge } from "./components/Badge.tsdml"
+import { Panel } from "./components/Panel.tsdml"
+
+export function createCounter() {
+  const count = createSignal(0)
+  const ticks = createSignal<{ id: number; label: string }[]>([])
+  const increment = () => {
+    const next = count.read() + 1
+    count.write(next)
+    ticks.write([...ticks.read(), { id: next, label: `tick ${next}` }])
+  }
+
+  // The DML template: static structure + the `{ count.read() }` binding.
+  // The outer `.page-root` div is `display: contents`, so the sections below
+  // lay out exactly as if they were direct children of `#root`.
+  return @{
+    div {
+      @class: "page-root",
+      section {
+        @id: "center",
+        div {
+          @class: "hero",
+          img { @src: heroImg, @class: "base", @width: 170, @height: 179, @alt: "" },
+          img { @src: tsdmlMark, @class: "framework", @alt: "tsdml" },
+          img { @src: viteLogo, @class: "vite", @alt: "Vite logo" },
+        },
+        div {
+          h1 { "Get started" },
+          p {
+            "Edit ",
+            code { "src/App.tsx" },
+            " and save to test ",
+            code { "HMR" }
+          }
+        },
+        Panel {
+          @title: "Counter demo",
+          Badge { @label: "TSDML", @tone: "green" },
+          Badge { @label: "no tone" },
+          // Named slots: this block becomes `props.footer` inside Panel, which
+          // decides where to place it (here, its `@slot("footer")` outlet).
+          @template("footer") {
+            span { @class: "footer-note", "panel footer" }
+          },
+          // Control flow is a block: it can wrap several siblings, and the loop
+          // variable is declared where it is used. `@key: tick.id` reuses the
+          // DOM node of a surviving item instead of rebuilding the list.
+          @if (count.read() >= 3) {
+            p { @class: "hot", "hot!" }
+          },
+          ul {
+            @class: "tick-list",
+            @for (tick of ticks.read()) {
+              @key: tick.id,
+              li { { tick.label } }
+            }
+          },
+          button {
+            @type: "button",
+            @class: "counter",
+            @onClick: increment,
+            "Count is ",
+            { count.read() }
+          }
+        }
+      },
+      div { @class: "ticks" },
+      section {
+        @id: "next-steps",
+        div {
+          @id: "docs",
+          svg {
+            @class: "icon",
+            @role: "presentation",
+            @aria-hidden: "true",
+            use { @href: "/icons.svg#documentation-icon" }
+          },
+          h2 { "Documentation" },
+          p { "Your questions, answered" },
+          ul {
+            li {
+              a {
+                @href: "https://vite.dev/",
+                @target: "_blank",
+                img { @class: "logo", @src: viteLogo, @alt: "" },
+                "Explore Vite"
+              }
+            },
+            li {
+              a {
+                @href: "https://github.com/WZ-AnNi/dml",
+                @target: "_blank",
+                img { @class: "button-icon", @src: tsdmlMark, @alt: "" },
+                "Explore TSDML"
+              }
+            },
+          }
+        },
+        div {
+          @id: "social",
+          svg {
+            @class: "icon",
+            @role: "presentation",
+            @aria-hidden: "true",
+            use { @href: "/icons.svg#social-icon" }
+          },
+          h2 { "Connect with us" },
+          p { "Join the Vite community" },
+          ul {
+            li {
+              a {
+                @href: "https://github.com/vitejs/vite",
+                @target: "_blank",
+                svg {
+                  @class: "button-icon",
+                  @role: "presentation",
+                  @aria-hidden: "true",
+                  use { @href: "/icons.svg#github-icon" }
+                },
+                "GitHub"
+              }
+            },
+            li {
+              a {
+                @href: "https://chat.vite.dev/",
+                @target: "_blank",
+                svg {
+                  @class: "button-icon",
+                  @role: "presentation",
+                  @aria-hidden: "true",
+                  use { @href: "/icons.svg#discord-icon" }
+                },
+                "Discord"
+              }
+            },
+            li {
+              a {
+                @href: "https://x.com/vite_js",
+                @target: "_blank",
+                svg {
+                  @class: "button-icon",
+                  @role: "presentation",
+                  @aria-hidden: "true",
+                  use { @href: "/icons.svg#x-icon" }
+                },
+                "X.com"
+              }
+            },
+            li {
+              a {
+                @href: "https://bsky.app/profile/vite.dev",
+                @target: "_blank",
+                svg {
+                  @class: "button-icon",
+                  @role: "presentation",
+                  @aria-hidden: "true",
+                  use { @href: "/icons.svg#bluesky-icon" }
+                },
+                "Bluesky"
+              }
+            }
+          }
+        }
+      },
+      div { @class: "ticks" },
+      section { @id: "spacer" }
+    }
+  }
+}

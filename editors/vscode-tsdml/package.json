@@ -1,0 +1,82 @@
+{
+  "name": "vscode-tsdml",
+  "displayName": "TSDML Language Features",
+  "description": "TypeScript-first DML templates: full TS intellisense (hover, completion, go-to-definition, diagnostics) for .tsdml files, powered by Volar.",
+  "version": "0.0.5",
+  "publisher": "dml",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/WZ-AnNi/dml.git",
+    "directory": "editors/vscode-tsdml"
+  },
+  "engines": {
+    "vscode": "^1.82.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "*",
+    "onLanguage:tsdml"
+  ],
+  "extensionDependencies": [
+    "dml.vscode-dml"
+  ],
+  "main": "./dist/client.js",
+  "contributes": {
+    "typescriptServerPlugins": [
+      {
+        "name": "tsdml-tsplugin",
+        "enable": true
+      }
+    ],
+    "languages": [
+      {
+        "id": "tsdml",
+        "extensions": [
+          ".tsdml"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "tsdml",
+        "scopeName": "source.tsdml",
+        "path": "./syntaxes/tsdml.tmLanguage.json"
+      }
+    ]
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "npm run build && node dist/selfcheck.js",
+    "test:integration": "node scripts/run-integration.mjs",
+    "watch": "node scripts/build.mjs --watch",
+    "pack": "node scripts/build.mjs && node scripts/pack-vsix.mjs",
+    "install:local": "node scripts/build.mjs && node scripts/pack-vsix.mjs --install"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "latest",
+    "@types/vscode": "^1.82.0",
+    "@volar/vscode": "~2.4.0",
+    "@vscode/test-electron": "^3.1.0",
+    "esbuild": "latest",
+    "mocha": "^12.0.0",
+    "typescript": "~5.9.2",
+    "vsce": "latest",
+    "vscode-oniguruma": "^2.0.1",
+    "vscode-textmate": "^9.3.2"
+  },
+  "dependencies": {
+    "@tsdml/compiler": "0.0.0",
+    "@tsdml/language-service": "0.0.0",
+    "@tsdml/transform": "0.0.0",
+    "@volar/language-core": "~2.4.0",
+    "@volar/language-server": "~2.4.0",
+    "@volar/typescript": "~2.4.0",
+    "tsdml-tsplugin": "0.0.4",
+    "volar-service-typescript": "volar-2.4",
+    "vscode-uri": "^3.0.8"
+  }
+}

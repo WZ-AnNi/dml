@@ -2,11 +2,40 @@
 node_modules/
 .pnpm-store/
 *.tsbuildinfo
+*.js.map
+*.d.ts.map
 
 # build
 dist/
-*.node
+out/
 target/
+*.node
+*.vsix
+*.old
+
+# binaries — never commit these, they are rebuilt per platform
+*.exe
+*.dll
+*.so
+*.dylib
+
+# packaging / staging
+.vsix-stage/
+
+# vite-plugin-inspect debug output
+.vite-inspect/
+
+# VS Code extension integration suite: esbuild output lands next to the specs
+# (the VS Code test runner loads the .js in place)
+editors/vscode-tsdml/test/integration/suite/*.spec.js
+editors/vscode-tsdml/test/integration/suite/index.js
+
+# VS Code integration test: downloads a whole editor instance (~12k files)
+.vscode-test/
+
+# local scratch dirs
+.isoext2/
+isoext2/
 
 # editor
 .vscode/
@@ -17,3 +46,9 @@ target/
 *.log
 npm-debug.log*
 .local/
+
+# temp files
+*.tmp
+*.bak
+test-*.mjs
+test-*.js

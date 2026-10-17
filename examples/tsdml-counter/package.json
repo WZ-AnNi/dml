@@ -1,0 +1,29 @@
+{
+  "name": "@dml/example-tsdml-counter",
+  "version": "0.0.0",
+  "description": "TSDML counter demo: a component written in a .tsdml file (TS + DML template), transformed by the @tsdml/vite plugin into the optimizing runtime IR, verified against the in-memory test host (vitest) and in Chromium (test/browser.mjs).",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:browser": "node test/browser.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@dml/reactivity": "workspace:*",
+    "@dml/runtime-dom": "workspace:*",
+    "@dml/runtime-test": "workspace:*",
+    "@tsdml/vite": "workspace:*"
+  },
+  "devDependencies": {
+    "@tsdml/language-service": "workspace:*",
+    "@vitejs/devtools": "^0.6.3",
+    "typescript": "6.0.3",
+    "vite": "latest",
+    "vite-plugin-inspect": "^12.0.2",
+    "vitest": "latest"
+  }
+}

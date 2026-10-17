@@ -1,0 +1,30 @@
+{
+  "name": "@tsdml/transform",
+  "version": "0.0.0",
+  "description": "Shared TSDML source transform: finds `@{ ... }` template blocks (skipping comments/strings) and lowers them into `e()` runtime calls via the native Rust compiler. Used by the Vite plugin and the TypeScript language-service plugin so editor and build agree.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@tsdml/compiler": "workspace:*"
+  },
+  "devDependencies": {
+    "tsdown": "latest",
+    "typescript": "latest",
+    "vitest": "latest"
+  }
+}

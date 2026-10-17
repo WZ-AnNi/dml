@@ -2,18 +2,18 @@
   "name": "vscode-dml",
   "displayName": "DML / TSDML Language Support",
   "description": "Language support for DML and TSDML: syntax highlighting, diagnostics, hover, semantic tokens and completion via the native Rust dml-lsp server.",
-  "version": "0.0.1",
+  "version": "0.0.6",
   "publisher": "dml",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/WZ-AnNi/dml.git"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },
   "categories": [
     "Programming Languages",
     "Linters"
-  ],
-  "activationEvents": [
-    "onLanguage:dml",
-    "onLanguage:tsdml"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -28,28 +28,12 @@
           ".dml"
         ],
         "configuration": "./language-configuration.json"
-      },
-      {
-        "id": "tsdml",
-        "aliases": [
-          "TSDML",
-          "tsdml"
-        ],
-        "extensions": [
-          ".tsdml"
-        ],
-        "configuration": "./language-configuration.json"
       }
     ],
     "grammars": [
       {
         "language": "dml",
         "scopeName": "source.dml",
-        "path": "./syntaxes/dml.tmLanguage.json"
-      },
-      {
-        "language": "tsdml",
-        "scopeName": "source.tsdml",
         "path": "./syntaxes/dml.tmLanguage.json"
       }
     ],
@@ -67,6 +51,10 @@
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
+    "build:lsp": "node scripts/build-lsp.mjs",
+    "build": "npm run compile && npm run build:lsp",
+    "pack": "node scripts/pack-vsix.mjs",
+    "install:local": "npm run build && node scripts/pack-vsix.mjs --install",
     "watch": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --watch"
   },
   "devDependencies": {

@@ -1,0 +1,2 @@
+import type { E } from "@dml/runtime-dom";
+export function Counter(e: E) {}

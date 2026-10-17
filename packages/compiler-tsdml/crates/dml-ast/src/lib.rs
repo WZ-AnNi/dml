@@ -41,13 +41,25 @@ pub enum Member {
         /// full attribute name, may include a namespace prefix (e.g. `android:layout_width`)
         name: String,
         value: DmlValue,
+        /// byte span of the attribute NAME in the raw source (`src`, not `@src`)
+        name_span: Option<Span>,
+        /// byte span of the attribute VALUE in the raw source
+        value_span: Option<Span>,
     },
     /// `childName { ... }`
     Element(Element),
     /// `"text"` or `#text: "..."`
-    Text(String),
+    Text {
+        text: String,
+        /// byte span of the string content in the raw source
+        span: Option<Span>,
+    },
     /// a TSDML template expression child, e.g. `` `count()` `` (emitted verbatim)
-    Expr(String),
+    Expr {
+        expr: String,
+        /// byte span of the expression in the raw source (excludes delimiters)
+        span: Option<Span>,
+    },
     /// an ordered content sequence `[ ... ]`
     Sequence(Vec<Member>),
     /// `@ns: { ... }` — a namespace scope that prefixes its inner bare keys
@@ -55,6 +67,80 @@ pub enum Member {
         prefix: String,
         inner: Vec<Member>,
     },
+    /// `@if (cond) { … } @else { … }` / `@for (x of items).key(x.id) { … }`
+    ///
+    /// The compact element form is the same node: `li { @if: cond }` parses to a
+    /// `Directive` whose body is that one element, so codegen has a single path.
+    Directive(Directive),
+    /// `@name(...) { body }` — a macro component call.
+    ///
+    /// The `()` head is preserved as raw source (not parsed here); the registered
+    /// macro component's `parse` function interprets it at codegen time. The body
+    /// is a normal member list (same grammar as an element's body).
+    ///
+    /// Built-in `@if`/`@for` still produce `Directive` (compat path in parser);
+    /// user-defined macro components produce `MacroCall`.
+    MacroCall(MacroCall),
+}
+
+/// A control-flow block.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Directive {
+    pub kind: DirectiveKind,
+    /// The members the block renders (an element body's grammar).
+    pub body: Vec<Member>,
+    /// byte span of the whole directive in the raw source
+    pub span: Option<Span>,
+}
+
+/// A macro component call: `@name(...) { body }`.
+///
+/// The `()` head is preserved as raw source; the registered macro component's
+/// `parse` function interprets it at codegen time. The body is a normal member
+/// list (same grammar as an element's body).
+#[derive(Debug, Clone, PartialEq)]
+pub struct MacroCall {
+    /// The macro component name (without `@` prefix).
+    pub name: String,
+    /// byte span of the name in the raw source
+    pub name_span: Option<Span>,
+    /// The raw source inside `()` (not parsed here).
+    pub head_src: String,
+    /// byte span of the head in the raw source (includes `(` and `)`)
+    pub head_span: Option<Span>,
+    /// The body members (normal member list, same grammar as element body).
+    pub body: Vec<Member>,
+    /// byte span of the whole macro call in the raw source
+    pub span: Option<Span>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum DirectiveKind {
+    /// `@if (cond) { … }` with optional `@else if` / `@else` arms. The arms are
+    /// a chain: `otherwise` is the next `Directive::If` (or its `body` holds the
+    /// plain `@else` members).
+    If {
+        cond: DmlValue,
+        cond_span: Option<Span>,
+        otherwise: Option<ElseArm>,
+    },
+    /// `@for (var of iterable) { … }`
+    For {
+        /// the binding, verbatim (`tick`, `[k, v]`, …) — it becomes the arrow
+        /// parameter of the generated `.map(...)`
+        var: String,
+        var_span: Option<Span>,
+        iter: DmlValue,
+        iter_span: Option<Span>,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum ElseArm {
+    /// `@else if (cond) { … }` (boxed: the arm chain is recursive)
+    If(Box<Directive>),
+    /// `@else { … }`
+    Block { body: Vec<Member>, span: Option<Span> },
 }
 
 /// A DML element.
@@ -74,7 +160,7 @@ pub struct Document {
 }
 
 /// Source span for error reporting.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct Span {
     pub start: usize,
     pub end: usize,
@@ -82,15 +168,65 @@ pub struct Span {
     pub col: u32,
 }
 
+/// The role of a node in the raw↔lowered mapping (editor-facing).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum SpanRole {
+    /// A host element tag (`div`): the template AST layer owns it.
+    Tag,
+    /// An attribute name on a host element (`class`).
+    AttrName,
+    /// An attribute value on a host element.
+    AttrValue,
+    /// Literal text.
+    Text,
+    /// An embedded TypeScript expression.
+    Expr,
+    /// A **component** tag (`Counter`): a TypeScript identifier, so the TS
+    /// service owns hover / go-to-definition / completion for it.
+    ComponentTag,
+    /// A prop name on a component: completion comes from the component's
+    /// declared props type, so TS owns it.
+    ComponentAttrName,
+    /// A prop value on a component.
+    ComponentAttrValue,
+    /// The binding of `@for (tick of …)`: a TypeScript *binding* the generated
+    /// `.map((tick) => …)` declares, so the TS service owns it (rename, type).
+    LoopVar,
+    /// The slot name inside `@template("name")` / `@slot("name")`. The editor
+    /// answers it (completion from the component's declared slots), so the
+    /// template layer owns it rather than the TS string-literal oracle.
+    SlotName,
+}
+
+/// One authoritative mapping: a raw fragment ↔ its lowered counterpart.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct NodeSpan {
+    pub role: SpanRole,
+    /// byte span in the raw template (inner DML text)
+    pub raw: (usize, usize),
+    /// byte span in the lowered `e(...)` output
+    pub lowered: (usize, usize),
+}
+
+impl Element {
+    /// The byte span of this element's NAME in the raw source.
+    pub fn name_span(&self) -> Option<Span> {
+        self.span
+    }
+}
+
 impl NodeKind {
     pub const fn of(m: &Member) -> NodeKind {
         match m {
             Member::Attribute { .. } => NodeKind::Attribute,
             Member::Element(_) => NodeKind::Element,
-            Member::Text(_) => NodeKind::Text,
-            Member::Expr(_) => NodeKind::Text,
+            Member::Text { .. } => NodeKind::Text,
+            Member::Expr { .. } => NodeKind::Text,
             Member::Sequence(_) => NodeKind::Sequence,
             Member::NamespaceScope { .. } => NodeKind::NamespaceScope,
+            Member::Directive(_) => NodeKind::Sequence,
+            Member::MacroCall(_) => NodeKind::Sequence,
         }
     }
 }

@@ -11,11 +11,24 @@ native Rust language server (`dml-lsp`) that reuses the same parser as the
 - **Hover** — element / attribute info
 - **Semantic tokens** — element names, attributes, strings, numbers, expressions
 - **Completion** — element and attribute suggestions
+- **Full TypeScript integration for `.tsdml`** — a TypeScript language-service
+  plugin (`@tsdml/language-service`) is registered via
+  `contributes.typescriptServerPlugins`. It lowers every `@{ ... }` template
+  block into `e(...)` calls on the fly, so `.tsdml` files get real
+  type-checking, autocomplete, hover and go-to-definition for both the TS code
+  and the identifiers used inside templates — exactly like TSX, with **no
+  hand-written `.d.ts` files**.
 
 ## Requirements
 
 - Visual Studio Code 1.85+
 - The bundled `dml-lsp` binary (Windows x64) is included in this package.
+- For `.tsdml` TypeScript integration, install `@tsdml/language-service` in
+  your project (it is loaded by the TS server from `node_modules`):
+
+  ```sh
+  pnpm add -D @tsdml/language-service
+  ```
 
 ## Usage
 

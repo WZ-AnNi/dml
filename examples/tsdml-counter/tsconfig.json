@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2023", "DOM"],
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "verbatimModuleSyntax": true,
+    
+    "types": ["vite/client"]
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsdml", "test/**/*.ts", "vite.config.ts"]
+}
+

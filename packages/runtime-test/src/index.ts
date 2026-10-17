@@ -2,11 +2,12 @@
  * @dml/runtime-test — public entry.
  *
  * A self-contained in-memory host node model plus its RendererOptions
- * implementation. Lets tests render runtime-core output into plain JS objects
- * and assert on them, with no DOM required.
+ * implementation, plus the template kit bound to that host. Lets tests render
+ * compiled `.tsdml` output into plain JS objects and assert on them, with no
+ * DOM required.
  */
 
-import { createRenderer } from "@dml/runtime-core"
+import { createRenderer, createTemplateKit } from "@dml/runtime-core"
 import type { RendererElement, RendererNode, RendererOptions } from "@dml/runtime-core"
 
 /** A test node is a plain, tree-shaped JS object. */
@@ -41,6 +42,12 @@ export const testNodeOps = {
   ): void {
     const c = child as unknown as TestNode
     const p = parent as unknown as TestNode
+    // DOM `insertBefore` MOVES a node that is already attached; keyed list
+    // reuse relies on that (otherwise the node would appear twice).
+    if (c.parent) {
+      const old = c.parent.children.indexOf(c)
+      if (old >= 0) c.parent.children.splice(old, 1)
+    }
     c.parent = p
     if (anchor) {
       const a = anchor as unknown as TestNode
@@ -79,6 +86,31 @@ export const testNodeOps = {
     const next = p.children[i + 1]
     return (next as unknown as RendererNode) ?? null
   },
+  /** Direct children, so a cloned subtree can be paired with its prototype. */
+  children(node: RendererNode): RendererNode[] {
+    return ((node as unknown as TestNode).children ?? []) as unknown as RendererNode[]
+  },
+  cloneNode(node: RendererNode, deep: boolean): RendererNode {
+    const copy = (n: TestNode): TestNode => {
+      const cloned: TestNode = {
+        type: n.type,
+        text: n.text,
+        children: [],
+        props: { ...n.props },
+        events: { ...n.events },
+      }
+      if (deep) {
+        // re-establish the parent links the test host navigates by
+        cloned.children = (n.children ?? []).map((child) => {
+          const childClone = copy(child)
+          childClone.parent = cloned
+          return childClone
+        })
+      }
+      return cloned
+    }
+    return copy(node as unknown as TestNode) as unknown as RendererNode
+  },
 }
 
 export const testPatchProp: RendererOptions["patchProp"] = (
@@ -106,4 +138,46 @@ export const testRendererOptions = {
 /** Renderer bound to the in-memory test host. */
 export function createTestRenderer() {
   return createRenderer(testRendererOptions)
+}
+
+/**
+ * The primitives compiled `.tsdml` modules call when built for the test host.
+ *
+ * A project points the compiler at this module (`tsdml({ runtimeModule:
+ * "@dml/runtime-test" })`) and its `.tsdml` sources keep using plain
+ * components 鈥?`createCounter()` returns a `TestNode`, no renderer argument.
+ */
+export const { template, insert, setProp, setPropReactive, on, mount, each } =
+  createTemplateKit(testRendererOptions)
+
+/** Flatten a TestNode subtree into its text content (test assertions). */
+export function toText(node: unknown): string {
+  if (node == null) return ""
+  if (typeof node === "string" || typeof node === "number") return String(node)
+  if (Array.isArray(node)) return node.map(toText).join("")
+  const n = node as TestNode
+  if (n.type === "text") return n.text ?? ""
+  return (n.children ?? []).map(toText).join("")
+}
+
+/** Depth-first search for the first TestNode matching `pred`. */
+export function findNode(
+  node: unknown,
+  pred: (n: TestNode) => boolean,
+): TestNode | undefined {
+  if (node == null || typeof node !== "object") return undefined
+  if (Array.isArray(node)) {
+    for (const item of node) {
+      const hit = findNode(item, pred)
+      if (hit) return hit
+    }
+    return undefined
+  }
+  const n = node as TestNode
+  if (n.type !== "text" && pred(n)) return n
+  for (const child of n.children ?? []) {
+    const hit = findNode(child, pred)
+    if (hit) return hit
+  }
+  return undefined
 }

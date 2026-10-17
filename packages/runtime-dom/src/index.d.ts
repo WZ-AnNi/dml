@@ -8,6 +8,8 @@
 import { patchProp } from "./patchProp.js";
 export * from "./nodeOps.js";
 export * from "./patchProp.js";
+export * from "./reactive.js";
+export type { E } from "./tsdml-runtime.js";
 /** The DOM host for runtime-core's RendererOptions. */
 export declare const domRendererOptions: {
     createElement(tag: string): import("@dml/runtime-core").RendererElement;

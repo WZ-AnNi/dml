@@ -1,0 +1,14 @@
+.vscode/**
+src/**
+scripts/**
+node_modules/*
+!node_modules/@tsdml
+!node_modules/tsdml-tsplugin
+**/*.ts
+**/*.map
+dist/selfcheck.js
+dist/*.cjs
+**/*.old
+tsconfig.json
+package-lock.json
+.gitignore

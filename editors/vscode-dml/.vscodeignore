@@ -7,3 +7,4 @@ out/**/*.map
 .gitignore
 tsconfig.json
 package-lock.json
+scripts/**

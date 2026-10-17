@@ -11,16 +11,20 @@
       "types": "./dist/index.d.mts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs"
+    },
+    "./tsdml-runtime": {
+      "types": "./src/tsdml-runtime.d.ts"
     }
   },
-  "files": ["dist"],
+  "files": ["dist", "src/tsdml-runtime.d.ts"],
   "scripts": {
     "build": "tsdown",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
   "dependencies": {
-    "@dml/runtime-core": "workspace:*"
+    "@dml/runtime-core": "workspace:*",
+    "csstype": "latest"
   },
   "devDependencies": {
     "happy-dom": "latest",

@@ -10,3 +10,7 @@ name = "dml_parser"
 
 [dependencies]
 dml-ast = { path = "../dml-ast" }
+oxc_allocator = "0.153"
+oxc_ast = "0.153"
+oxc_parser = "0.153"
+oxc_span = "0.153"

@@ -24,6 +24,8 @@
   "files": ["dist", "binding.js", "binding.d.ts", "*.node"],
   "scripts": {
     "build": "napi build --platform --release --manifest-path crates/napi-binding/Cargo.toml && tsdown && node scripts/copy-node.mjs",
+    "build:all": "node scripts/build-all.mjs",
+    "build:check": "node scripts/build-all.mjs --check",
     "build:debug": "napi build --platform --manifest-path crates/napi-binding/Cargo.toml && tsdown && node scripts/copy-node.mjs",
     "build:ts": "tsdown",
     "cargo-test": "cargo test --workspace",

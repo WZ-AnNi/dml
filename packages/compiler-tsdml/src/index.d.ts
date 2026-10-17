@@ -14,6 +14,11 @@ export interface DmlSpan {
     line: number;
     col: number;
 }
+/** A compact byte span used for editor routing (line/col omitted). */
+export interface DmlByteSpan {
+    start: number;
+    end: number;
+}
 export type DmlValueJson = {
     type: "string";
     value: string;
@@ -29,6 +34,9 @@ export type DmlValueJson = {
     type: "bare";
     value: string;
 } | {
+    type: "expr";
+    value: string;
+} | {
     type: "array";
     items: DmlValueJson[];
 } | {
@@ -38,14 +46,27 @@ export type DmlValueJson = {
 export type DmlMemberJson = {
     kind: "element";
     name: string;
+    /** byte span of the element TAG in the raw source (null on recovery) */
+    span: DmlByteSpan | null;
     members: DmlMemberJson[];
 } | {
     kind: "attribute";
     name: string;
     value: DmlValueJson;
+    /** byte span of the attribute NAME (`@` excluded) in the raw source */
+    nameSpan: DmlByteSpan | null;
+    /** byte span of the attribute VALUE in the raw source */
+    valueSpan: DmlByteSpan | null;
 } | {
     kind: "text";
     value: string;
+    /** byte span of the string CONTENT in the raw source */
+    span: DmlByteSpan | null;
+} | {
+    kind: "expr";
+    value: string;
+    /** byte span of the expression text in the raw source */
+    span: DmlByteSpan | null;
 } | {
     kind: "sequence";
     items: DmlMemberJson[];
@@ -57,6 +78,28 @@ export type DmlMemberJson = {
 export type DmlElementJson = Extract<DmlMemberJson, {
     kind: "element";
 }>;
+export type NodeRole = "tag" | "attrName" | "attrValue" | "text" | "expr";
+/** A raw↔lowered fragment pair (byte offsets), relative to the input string
+ *  and to the emitted code respectively. Produced by the Rust codegen. */
+export interface CompileSpan {
+    role: NodeRole;
+    raw: [number, number];
+    lowered: [number, number];
+}
+export interface CompileError {
+    message: string;
+    span: {
+        start: number;
+        end: number;
+        line: number;
+        col: number;
+    };
+}
+export interface CompileWithSpansResult {
+    code: string;
+    spans: CompileSpan[];
+    errors: CompileError[];
+}
 /**
  * Parse DML source text and return the DML-AST as a plain object.
  * The result is the root element (kind: "element"). Implemented in Rust as a
@@ -68,4 +111,11 @@ export declare function parse(source: string): DmlElementJson;
  * lowering). Implemented in Rust as a napi binding.
  */
 export declare function compile(source: string): string;
+/**
+ * Compile DML source text and return `{ code, spans, errors }` — the
+ * authoritative raw↔lowered map the editor needs for exact hover/completion/
+ * navigation in templates, plus any tolerant-parse errors. Never throws on
+ * malformed DML (the parser recovers).
+ */
+export declare function compileWithSpans(source: string): CompileWithSpansResult;
 //# sourceMappingURL=index.d.ts.map

@@ -1,6 +1,10 @@
 // dml.config.dml — DML 写的项目配置（示例）
 // 兑现"配置文件也是 DML 写的"：用 DML 的属性/序列/命名空间描述配置，
 // 而非 YAML/JSON/TOML。由 @tsdml/compiler（Rust native）解析。
+// @config {
+//   @schema: "https://raw.githubusercontent.com/../dml.schema.dml"
+
+// }
 
 project {
   @name: "dml-framework"

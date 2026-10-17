@@ -1,0 +1,31 @@
+/**
+ * A component that takes **children** plus a **named slot**.
+ *
+ * `@slot("name") { fallback }` declares an outlet: the caller fills it with a
+ * `@template("name") { … }` block, which *replaces the whole outlet body*.
+ * Whatever sits in the outlet's body is the fallback shown when the caller
+ * passes nothing:
+ *
+ *   Panel {
+ *     @title: "hi",
+ *     @template("footer") { span { "bottom" } }   → props.footer
+ *     span { "body" }                             → props.children
+ *   }
+ */
+
+import type { Element } from '@dml/runtime-dom'
+
+export function Panel(props: {
+  title: string
+  children?: Element
+}) {
+  return @{
+    section {
+      @class: "panel",
+      h2 { { props.title } },
+      div { @class: "panel-body", { props.children } },
+      // the caller's `@template("footer")` content replaces this fallback
+      @slot("footer") { footer { @class: "panel-footer", "no footer" } }
+    }
+  }
+}

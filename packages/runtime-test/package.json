@@ -20,7 +20,9 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@dml/runtime-core": "workspace:*"
+    "@dml/reactivity": "workspace:*",
+    "@dml/runtime-core": "workspace:*",
+    "@dml/runtime-dom": "workspace:*"
   },
   "devDependencies": {
     "tsdown": "latest",

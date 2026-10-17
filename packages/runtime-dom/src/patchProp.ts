@@ -65,7 +65,15 @@ export function patchProp(
 
   if (key === "class") {
     if (next != null) {
-      target.className = String(next)
+      // SVG elements expose `className` as a READ-ONLY SVGAnimatedString, so
+      // assigning to it throws and takes the whole render down with it.
+      const hasWritableClassName =
+        typeof (target as { className?: unknown }).className === "string"
+      if (hasWritableClassName) {
+        target.className = String(next)
+      } else {
+        target.setAttribute("class", String(next))
+      }
     } else {
       target.removeAttribute("class")
     }
@@ -91,12 +99,22 @@ export function patchProp(
       target.removeAttributeNS(ns, key.slice("xlink:".length))
     }
   } else if (key in target && key !== "list") {
-    // prefer DOM property when it exists
-    if (next === undefined || next === null) {
-      ;(target as unknown as Record<string, unknown>)[key] = ""
-      target.removeAttribute(key)
-    } else {
-      ;(target as unknown as Record<string, unknown>)[key] = next
+    // prefer DOM property when it exists — but SVG's geometry/name properties
+    // (`width`, `height`, …) are read-only animated values; fall back to the
+    // attribute instead of throwing.
+    try {
+      if (next === undefined || next === null) {
+        ;(target as unknown as Record<string, unknown>)[key] = ""
+        target.removeAttribute(key)
+      } else {
+        ;(target as unknown as Record<string, unknown>)[key] = next
+      }
+    } catch {
+      if (next !== undefined && next !== null) {
+        target.setAttribute(key, String(next))
+      } else {
+        target.removeAttribute(key)
+      }
     }
   } else if (next !== undefined && next !== null) {
     target.setAttribute(key, String(next))

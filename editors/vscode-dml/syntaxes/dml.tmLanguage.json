@@ -8,7 +8,8 @@
     { "include": "#attribute" },
     { "include": "#string" },
     { "include": "#expression" },
-    { "include": "#number" }
+    { "include": "#number" },
+    { "include": "#boolean" }
   ],
   "repository": {
     "comment": {
@@ -47,6 +48,11 @@
     "number": {
       "patterns": [
         { "name": "constant.numeric.dml", "match": "\\b-?\\d+(\\.\\d+)?\\b" }
+      ]
+    },
+    "boolean": {
+      "patterns": [
+        { "name": "constant.language.boolean.dml", "match": "\\b(true|false)\\b" }
       ]
     }
   }
