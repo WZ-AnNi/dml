@@ -10,7 +10,7 @@
 export function Badge(props: { label: string; tone?: string }) {
   return @{
     span {
-      @class: props.tone ?? "badge",
+      @class: (props.tone ?? "badge")
       { props.label }
     }
   }

@@ -21,11 +21,16 @@ export function Panel(props: {
 }) {
   return @{
     section {
-      @class: "panel",
-      h2 { { props.title } },
-      div { @class: "panel-body", { props.children } },
+      @class: "panel"
+      h2 { { props.title } }
+      div { @class: "panel-body" { props.children } }
       // the caller's `@template("footer")` content replaces this fallback
-      @slot("footer") { footer { @class: "panel-footer", "no footer" } }
+      @slot("footer") { 
+        footer { 
+          @class: "panel-footer" 
+          "no footer" 
+        } 
+      }
     }
   }
 }
